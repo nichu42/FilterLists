@@ -1,88 +1,63 @@
-﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
+﻿using System.Runtime.CompilerServices;
+using FilterLists.Directory.Infrastructure;
 using FilterLists.Directory.Infrastructure.Persistence.Queries.Context;
-using FilterLists.Directory.Infrastructure.Persistence.Queries.Entities;
+using JetBrains.Annotations;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace FilterLists.Directory.Application.Queries;
 
 public static class GetSyntaxes
 {
-    public record Query : IRequest<List<SyntaxVm>>;
-
-    internal class Handler : IRequestHandler<Query, List<SyntaxVm>>
-    {
-        private readonly IQueryContext _context;
-        private readonly IMapper _mapper;
-
-        public Handler(IQueryContext context, IMapper mapper)
-        {
-            _context = context;
-            _mapper = mapper;
-        }
-
-        public Task<List<SyntaxVm>> Handle(
-            Query request,
-            CancellationToken cancellationToken)
-        {
-            return _context.Syntaxes
+    private static readonly Func<QueryDbContext, IAsyncEnumerable<Response>> Query =
+        EF.CompileAsyncQuery((QueryDbContext ctx) =>
+            ctx.Syntaxes
+                .Where(s => s.FilterListSyntaxes.Any())
                 .OrderBy(s => s.Id)
-                .ProjectTo<SyntaxVm>(_mapper.ConfigurationProvider)
-                .ToListAsync(cancellationToken);
-        }
-    }
+                .Select(s => new Response
+                (
+                    s.Id,
+                    s.Name,
+                    s.Description,
+                    s.Url,
+                    s.FilterListSyntaxes
+                        .OrderBy(fs => fs.FilterListId)
+                        .Select(fs => fs.FilterListId),
+                    s.SoftwareSyntaxes
+                        .OrderBy(ss => ss.SoftwareId)
+                        .Select(ss => ss.SoftwareId)
+                ))
+                .TagWith(nameof(GetSyntaxes))
+        );
 
-    internal class SyntaxVmProfile : Profile
+    public sealed record Request : IStreamRequest<Response>;
+
+    [UsedImplicitly]
+    private sealed class Handler(QueryDbContext ctx, IMemoryCache cache) : IStreamRequestHandler<Request, Response>
     {
-        public SyntaxVmProfile()
+        public async IAsyncEnumerable<Response> Handle(Request request, [EnumeratorCancellation] CancellationToken ct)
         {
-            CreateMap<Syntax, SyntaxVm>()
-                .ForMember(s => s.FilterListIds,
-                    o => o.MapFrom(s =>
-                        s.FilterListSyntaxes.OrderBy(fls => fls.FilterListId).Select(sls => sls.FilterListId)))
-                .ForMember(s => s.SoftwareIds,
-                    o => o.MapFrom(s =>
-                        s.SoftwareSyntaxes.OrderBy(ss => ss.SoftwareId).Select(ss => ss.SoftwareId)));
+            await foreach (var syntax in cache.GetOrCreateAsyncEnumerable(
+                                   nameof(GetSyntaxes),
+                                   Query(ctx).WithCancellation(ct))
+                               .WithCancellation(ct))
+                yield return syntax;
         }
     }
 
-    public record SyntaxVm
-    {
-        /// <summary>
-        /// The identifier.
-        /// </summary>
-        /// <example>3</example>
-        public long Id { get; init; }
-
-        /// <summary>
-        /// The unique name.
-        /// </summary>
-        /// <example>Adblock Plus</example>
-        public string Name { get; init; } = default!;
-
-        /// <summary>
-        /// The description.
-        /// </summary>
-        /// <example>null</example>
-        public string? Description { get; init; }
-
-        /// <summary>
-        /// The URL of the home page.
-        /// </summary>
-        /// <example>https://adblockplus.org/filters</example>
-        public Uri? Url { get; init; }
-
-        /// <summary>
-        /// The identifiers of the FilterLists implementing this Syntax.
-        /// </summary>
-        /// <example>[ 2, 6, 11 ]</example>
-        public IEnumerable<long> FilterListIds { get; init; } = new HashSet<long>();
-
-        /// <summary>
-        /// The identifiers of the Software that supports this Syntax.
-        /// </summary>
-        /// <example>[ 1, 2, 3 ]</example>
-        public IEnumerable<long> SoftwareIds { get; init; } = new HashSet<long>();
-    }
+    /// <param name="Id" example="3">The identifier.</param>
+    /// <param name="Name" example="Adblock Plus">The unique name.</param>
+    /// <param name="Description" example="null">The description.</param>
+    /// <param name="Url" example="https://adblockplus.org/filters">The URL of the home page.</param>
+    /// <param name="FilterListIds" example="[ 2, 6, 11 ]">The identifiers of the FilterLists implementing this Syntax.</param>
+    /// <param name="SoftwareIds" example="[ 1, 2, 3 ]">The identifiers of the Software that supports this Syntax.</param>
+    [PublicAPI]
+    public sealed record Response(
+        short Id,
+        string Name,
+        string? Description,
+        Uri? Url,
+        IEnumerable<int> FilterListIds,
+        IEnumerable<short> SoftwareIds);
 }

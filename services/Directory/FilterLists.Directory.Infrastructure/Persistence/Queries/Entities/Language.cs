@@ -3,26 +3,27 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace FilterLists.Directory.Infrastructure.Persistence.Queries.Entities;
 
-public record Language : EntityRequiringApproval
+public sealed record Language
 {
-    public string Iso6391 { get; init; } = default!;
-    public string Name { get; init; } = default!;
-    public IEnumerable<FilterListLanguage> FilterListLanguages { get; init; } = new HashSet<FilterListLanguage>();
-    public IEnumerable<Change> Changes { get; init; } = new HashSet<Change>();
+    public short Id { get; init; }
+    public string Iso6391 { get; init; } = null!;
+    public string Name { get; init; } = null!;
+    public IEnumerable<FilterListLanguage> FilterListLanguages { get; init; } = new List<FilterListLanguage>();
 }
 
-internal class LanguageTypeConfiguration : EntityRequiringApprovalTypeConfiguration<Language>
+internal sealed class LanguageTypeConfiguration : IEntityTypeConfiguration<Language>
 {
-    public override void Configure(EntityTypeBuilder<Language> builder)
+    public void Configure(EntityTypeBuilder<Language> builder)
     {
         builder.Property(l => l.Iso6391)
             .IsFixedLength()
             .HasMaxLength(2);
         builder.HasIndex(l => l.Iso6391)
             .IsUnique();
+        builder.Property(l => l.Name)
+            .HasMaxLength(64);
         builder.HasIndex(l => l.Name)
             .IsUnique();
-        builder.HasDataJsonFileEntityRequiringApproval<Language>();
-        base.Configure(builder);
+        builder.HasDataJsonFile<Language>();
     }
 }

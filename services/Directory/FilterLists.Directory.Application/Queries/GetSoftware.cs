@@ -1,90 +1,70 @@
-﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
+﻿using System.Runtime.CompilerServices;
+using FilterLists.Directory.Infrastructure;
 using FilterLists.Directory.Infrastructure.Persistence.Queries.Context;
-using FilterLists.Directory.Infrastructure.Persistence.Queries.Entities;
+using JetBrains.Annotations;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace FilterLists.Directory.Application.Queries;
 
 public static class GetSoftware
 {
-    public record Query : IRequest<List<SoftwareVm>>;
-
-    internal class Handler : IRequestHandler<Query, List<SoftwareVm>>
-    {
-        private readonly IQueryContext _context;
-        private readonly IMapper _mapper;
-
-        public Handler(IQueryContext context, IMapper mapper)
-        {
-            _context = context;
-            _mapper = mapper;
-        }
-
-        public Task<List<SoftwareVm>> Handle(
-            Query request,
-            CancellationToken cancellationToken)
-        {
-            return _context.Software
+    private static readonly Func<QueryDbContext, IAsyncEnumerable<Response>> Query =
+        EF.CompileAsyncQuery((QueryDbContext ctx) =>
+            ctx.Software
+                .Where(s => s.SoftwareSyntaxes
+                    .Any(ss => ss.Syntax.FilterListSyntaxes.Any()))
                 .OrderBy(s => s.Id)
-                .ProjectTo<SoftwareVm>(_mapper.ConfigurationProvider)
-                .ToListAsync(cancellationToken);
-        }
-    }
+                .Select(s => new Response
+                (
+                    s.Id,
+                    s.Name,
+                    s.Description,
+                    s.HomeUrl,
+                    s.DownloadUrl,
+                    s.SupportsAbpUrlScheme,
+                    s.SoftwareSyntaxes
+                        .OrderBy(ss => ss.SyntaxId)
+                        .Select(ss => ss.SyntaxId)
+                ))
+                .TagWith(nameof(GetSoftware))
+        );
 
-    internal class SoftwareVmProfile : Profile
+    public sealed record Request : IStreamRequest<Response>;
+
+    [UsedImplicitly]
+    private sealed class Handler(QueryDbContext ctx, IMemoryCache cache) : IStreamRequestHandler<Request, Response>
     {
-        public SoftwareVmProfile()
+        public async IAsyncEnumerable<Response> Handle(Request request, [EnumeratorCancellation] CancellationToken ct)
         {
-            CreateMap<Software, SoftwareVm>()
-                .ForMember(s => s.SyntaxIds,
-                    o => o.MapFrom(s => s.SoftwareSyntaxes.OrderBy(ss => ss.SyntaxId).Select(ss => ss.SyntaxId)));
+            await foreach (var software in cache.GetOrCreateAsyncEnumerable(
+                                   nameof(GetSoftware),
+                                   Query(ctx).WithCancellation(ct))
+                               .WithCancellation(ct))
+                yield return software;
         }
     }
 
-    public record SoftwareVm
-    {
-        /// <summary>
-        /// The identifier.
-        /// </summary>
-        /// <example>2</example>
-        public long Id { get; init; }
-
-        /// <summary>
-        /// The unique name.
-        /// </summary>
-        /// <example>Adblock Plus</example>
-        public string Name { get; init; } = default!;
-
-        /// <summary>
-        /// The description.
-        /// </summary>
-        /// <example>Adblock Plus is a free extension that allows you to customize your web experience. You can block annoying ads, disable tracking and lots more. It’s available for all major desktop browsers and for your mobile devices.</example>
-        public string? Description { get; init; }
-
-        /// <summary>
-        /// The URL of the home page.
-        /// </summary>
-        /// <example>https://adblockplus.org/</example>
-        public Uri? HomeUrl { get; init; }
-
-        /// <summary>
-        /// The URL of the Software download.
-        /// </summary>
-        /// <example>https://adblockplus.org/</example>
-        public Uri? DownloadUrl { get; init; }
-
-        /// <summary>
-        /// If the Software supports the abp: URL scheme to click-to-subscribe to a FilterList.
-        /// </summary>
-        /// <example>true</example>
-        public bool SupportsAbpUrlScheme { get; init; }
-
-        /// <summary>
-        /// The identifiers of the Syntaxes that this Software supports.
-        /// </summary>
-        /// <example>[ 3, 28, 38, 48 ]</example>
-        public IEnumerable<long> SyntaxIds { get; init; } = new HashSet<long>();
-    }
+    /// <param name="Id" example="2">The identifier.</param>
+    /// <param name="Name" example="Adblock Plus">The unique name.</param>
+    /// <param name="Description"
+    ///     example="Adblock Plus is a free extension that allows you to customize your web experience...">
+    ///     The description.
+    /// </param>
+    /// <param name="HomeUrl" example="https://adblockplus.org/">The URL of the home page.</param>
+    /// <param name="DownloadUrl" example="https://adblockplus.org/">The URL of the Software download.</param>
+    /// <param name="SupportsAbpUrlScheme" example="true">
+    ///     If the Software supports the abp: URL scheme to click-to-subscribe to a FilterList.
+    /// </param>
+    /// <param name="SyntaxIds" example="[ 3, 28, 38, 48 ]">The identifiers of the Syntaxes that this Software supports.</param>
+    [PublicAPI]
+    public sealed record Response(
+        long Id,
+        string Name,
+        string? Description,
+        Uri? HomeUrl,
+        Uri? DownloadUrl,
+        bool SupportsAbpUrlScheme,
+        IEnumerable<short> SyntaxIds);
 }

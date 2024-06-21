@@ -1,11 +1,14 @@
-﻿namespace FilterLists.Directory.Infrastructure.Persistence.Queries.Entities;
+﻿using JetBrains.Annotations;
 
-public record FilterListViewUrl
+namespace FilterLists.Directory.Infrastructure.Persistence.Queries.Entities;
+
+[PublicAPI]
+public sealed record FilterListViewUrl
 {
-    public long Id { get; init; }
-    public long FilterListId { get; init; }
-    public FilterList FilterList { get; init; } = default!;
+    public int Id { get; init; }
+    public int FilterListId { get; init; }
+    public FilterList FilterList { get; init; } = null!;
     public short SegmentNumber { get; init; }
     public short Primariness { get; init; }
-    public Uri Url { get; init; } = default!;
+    public Uri Url { get; init; } = null!;
 }

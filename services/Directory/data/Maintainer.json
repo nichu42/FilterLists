@@ -992,5 +992,20 @@
     "id": 192,
     "name": "Serhiy Guryev",
     "url": "https://github.com/serhiyguryev"
+  },
+  {
+    "id": 193,
+    "name": "BadBlock",
+    "url": "https://codeberg.org/Magnesium1062/BadBlock"
+  },
+  {
+    "id": 194,
+    "name": "Divested Computing Group",
+    "url": "https://divested.dev"
+  },
+  {
+    "id": 195,
+    "name": "ph00lt0",
+    "url": "https://github.com/ph00lt0"
   }
 ]

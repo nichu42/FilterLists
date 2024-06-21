@@ -1,28 +1,21 @@
-﻿using System.Globalization;
-using EFCore.NamingConventions.Internal;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace FilterLists.Directory.Infrastructure.Persistence.Queries.Entities;
 
-public record FilterListTag
+public sealed record FilterListTag
 {
-    public long FilterListId { get; init; }
-    public FilterList FilterList { get; init; } = default!;
-    public long TagId { get; init; }
-    public Tag Tag { get; init; } = default!;
+    public int FilterListId { get; init; }
+    public FilterList FilterList { get; init; } = null!;
+    public int TagId { get; init; }
+    public Tag Tag { get; init; } = null!;
 }
 
-internal class FilterListTagTypeConfiguration : IEntityTypeConfiguration<FilterListTag>
+internal sealed class FilterListTagTypeConfiguration : IEntityTypeConfiguration<FilterListTag>
 {
-    public virtual void Configure(EntityTypeBuilder<FilterListTag> builder)
+    public void Configure(EntityTypeBuilder<FilterListTag> builder)
     {
-        // TODO: register and resolve INameRewriter
-        var nr = new SnakeCaseNameRewriter(CultureInfo.InvariantCulture);
-
-        builder.ToTable($"{nr.RewriteName(nameof(FilterListTag))}s");
         builder.HasKey(flt => new { flt.FilterListId, flt.TagId });
-        builder.HasQueryFilter(flt => flt.FilterList.IsApproved && flt.Tag.IsApproved);
         builder.HasDataJsonFile<FilterListTag>();
     }
 }

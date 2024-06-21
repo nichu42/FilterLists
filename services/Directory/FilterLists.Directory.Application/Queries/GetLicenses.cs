@@ -1,89 +1,63 @@
-﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
+﻿using System.Runtime.CompilerServices;
+using FilterLists.Directory.Infrastructure;
 using FilterLists.Directory.Infrastructure.Persistence.Queries.Context;
-using FilterLists.Directory.Infrastructure.Persistence.Queries.Entities;
+using JetBrains.Annotations;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace FilterLists.Directory.Application.Queries;
 
 public static class GetLicenses
 {
-    public record Query : IRequest<List<LicenseVm>>;
-
-    internal class Handler : IRequestHandler<Query, List<LicenseVm>>
-    {
-        private readonly IQueryContext _context;
-        private readonly IMapper _mapper;
-
-        public Handler(IQueryContext context, IMapper mapper)
-        {
-            _context = context;
-            _mapper = mapper;
-        }
-
-        public Task<List<LicenseVm>> Handle(
-            Query request,
-            CancellationToken cancellationToken)
-        {
-            return _context.Licenses
+    private static readonly Func<QueryDbContext, IAsyncEnumerable<Response>> Query =
+        EF.CompileAsyncQuery((QueryDbContext ctx) =>
+            ctx.Licenses
+                .Where(l => l.FilterLists.Any())
                 .OrderBy(l => l.Id)
-                .ProjectTo<LicenseVm>(_mapper.ConfigurationProvider)
-                .ToListAsync(cancellationToken);
-        }
-    }
+                .Select(l => new Response(
+                    l.Id,
+                    l.Name,
+                    l.Url,
+                    l.PermitsModification,
+                    l.PermitsDistribution,
+                    l.PermitsCommercialUse,
+                    l.FilterLists
+                        .OrderBy(f => f.Id)
+                        .Select(f => f.Id)
+                ))
+                .TagWith(nameof(GetLicenses))
+        );
 
-    internal class LicenseVmProfile : Profile
+    public sealed record Request : IStreamRequest<Response>;
+
+    [UsedImplicitly]
+    private sealed class Handler(QueryDbContext ctx, IMemoryCache cache) : IStreamRequestHandler<Request, Response>
     {
-        public LicenseVmProfile()
+        public async IAsyncEnumerable<Response> Handle(Request request, [EnumeratorCancellation] CancellationToken ct)
         {
-            CreateMap<License, LicenseVm>().ForMember(l => l.FilterListIds,
-                o => o.MapFrom(l => l.FilterLists.OrderBy(fl => fl.Id).Select(fl => fl.Id)));
+            await foreach (var license in cache.GetOrCreateAsyncEnumerable(
+                                   nameof(GetLicenses),
+                                   Query(ctx).WithCancellation(ct))
+                               .WithCancellation(ct))
+                yield return license;
         }
     }
 
-    public record LicenseVm
-    {
-        /// <summary>
-        ///     The identifier.
-        /// </summary>
-        /// <example>5</example>
-        public long Id { get; private init; }
-
-        /// <summary>
-        ///     The unique name.
-        /// </summary>
-        /// <example>All Rights Reserved</example>
-        public string Name { get; private init; } = default!;
-
-        /// <summary>
-        ///     The URL of the home page.
-        /// </summary>
-        /// <example>https://en.wikipedia.org/wiki/All_rights_reserved</example>
-        public Uri? Url { get; private init; }
-
-        /// <summary>
-        ///     If the License permits modification.
-        /// </summary>
-        /// <example>false</example>
-        public bool PermitsModification { get; private init; }
-
-        /// <summary>
-        ///     If the License permits distribution.
-        /// </summary>
-        /// <example>false</example>
-        public bool PermitsDistribution { get; private init; }
-
-        /// <summary>
-        ///     If the License permits commercial use.
-        /// </summary>
-        /// <example>false</example>
-        public bool PermitsCommercialUse { get; private init; }
-
-        /// <summary>
-        ///     The identifiers of the FilterLists released under this License.
-        /// </summary>
-        /// <example>[ 6, 31 ]</example>
-        public IEnumerable<long> FilterListIds { get; private init; } = new HashSet<long>();
-    }
+    /// <param name="Id" example="5">The identifier.</param>
+    /// <param name="Name" example="All Rights Reserved">The unique name.</param>
+    /// <param name="Url" example="https://en.wikipedia.org/wiki/All_rights_reserved">The URL of the home page.</param>
+    /// <param name="PermitsModification" example="false">If the License permits modification.</param>
+    /// <param name="PermitsDistribution" example="false">If the License permits distribution.</param>
+    /// <param name="PermitsCommercialUse" example="false">If the License permits commercial use.</param>
+    /// <param name="FilterListIds" example="[ 6, 31 ]">The identifiers of the FilterLists released under this License.</param>
+    [PublicAPI]
+    public sealed record Response(
+        int Id,
+        string Name,
+        Uri? Url,
+        bool PermitsModification,
+        bool PermitsDistribution,
+        bool PermitsCommercialUse,
+        IEnumerable<int> FilterListIds);
 }

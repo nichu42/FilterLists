@@ -1,85 +1,60 @@
-﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
+﻿using System.Runtime.CompilerServices;
+using FilterLists.Directory.Infrastructure;
 using FilterLists.Directory.Infrastructure.Persistence.Queries.Context;
-using FilterLists.Directory.Infrastructure.Persistence.Queries.Entities;
+using JetBrains.Annotations;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace FilterLists.Directory.Application.Queries;
 
 public static class GetMaintainers
 {
-    public record Query : IRequest<List<MaintainerVm>>;
-
-    internal class Handler : IRequestHandler<Query, List<MaintainerVm>>
-    {
-        private readonly IQueryContext _context;
-        private readonly IMapper _mapper;
-
-        public Handler(IQueryContext context, IMapper mapper)
-        {
-            _context = context;
-            _mapper = mapper;
-        }
-
-        public Task<List<MaintainerVm>> Handle(
-            Query request,
-            CancellationToken cancellationToken)
-        {
-            return _context.Maintainers
+    private static readonly Func<QueryDbContext, IAsyncEnumerable<Response>> Query =
+        EF.CompileAsyncQuery((QueryDbContext ctx) =>
+            ctx.Maintainers
+                .Where(m => m.FilterListMaintainers.Any())
                 .OrderBy(m => m.Id)
-                .ProjectTo<MaintainerVm>(_mapper.ConfigurationProvider)
-                .ToListAsync(cancellationToken);
-        }
-    }
+                .Select(m => new Response(
+                    m.Id,
+                    m.Name,
+                    m.Url,
+                    m.EmailAddress,
+                    m.TwitterHandle,
+                    m.FilterListMaintainers
+                        .OrderBy(fm => fm.FilterListId)
+                        .Select(fm => fm.FilterListId)
+                ))
+                .TagWith(nameof(GetMaintainers))
+        );
 
-    internal class MaintainerVmProfile : Profile
+    public sealed record Request : IStreamRequest<Response>;
+
+    [UsedImplicitly]
+    private sealed class Handler(QueryDbContext ctx, IMemoryCache cache) : IStreamRequestHandler<Request, Response>
     {
-        public MaintainerVmProfile()
+        public async IAsyncEnumerable<Response> Handle(Request request, [EnumeratorCancellation] CancellationToken ct)
         {
-            CreateMap<Maintainer, MaintainerVm>()
-                .ForMember(m => m.FilterListIds,
-                    o => o.MapFrom(m =>
-                        m.FilterListMaintainers.OrderBy(flm => flm.FilterListId).Select(flm => flm.FilterListId)));
+            await foreach (var maintainer in cache.GetOrCreateAsyncEnumerable(
+                                   nameof(GetMaintainers),
+                                   Query(ctx).WithCancellation(ct))
+                               .WithCancellation(ct))
+                yield return maintainer;
         }
     }
 
-    public record MaintainerVm
-    {
-        /// <summary>
-        /// The identifier.
-        /// </summary>
-        /// <example>7</example>
-        public long Id { get; init; }
-
-        /// <summary>
-        /// The unique name.
-        /// </summary>
-        /// <example>The EasyList Authors</example>
-        public string Name { get; init; } = default!;
-
-        /// <summary>
-        /// The URL of the home page.
-        /// </summary>
-        /// <example>https://easylist.to/</example>
-        public Uri? Url { get; init; }
-
-        /// <summary>
-        /// The email address.
-        /// </summary>
-        /// <example>null</example>
-        public string? EmailAddress { get; init; }
-
-        /// <summary>
-        /// The Twitter handle.
-        /// </summary>
-        /// <example>null</example>
-        public string? TwitterHandle { get; init; }
-
-        /// <summary>
-        /// The identifiers of the FilterLists maintained by this Maintainer.
-        /// </summary>
-        /// <example>[ 11, 13, 301 ]</example>
-        public IEnumerable<long> FilterListIds { get; init; } = new HashSet<long>();
-    }
+    /// <param name="Id" example="7">The identifier.</param>
+    /// <param name="Name" example="The EasyList Authors">The unique name.</param>
+    /// <param name="Url" example="https://easylist.to/">The URL of the home page.</param>
+    /// <param name="EmailAddress" example="null">The email address.</param>
+    /// <param name="TwitterHandle" example="null">The Twitter handle.</param>
+    /// <param name="FilterListIds" example="[ 11, 13, 301 ]">The identifiers of the FilterLists maintained by this Maintainer.</param>
+    [PublicAPI]
+    public sealed record Response(
+        int Id,
+        string Name,
+        Uri? Url,
+        string? EmailAddress,
+        string? TwitterHandle,
+        IEnumerable<int> FilterListIds);
 }

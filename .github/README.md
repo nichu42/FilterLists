@@ -6,19 +6,6 @@
 <a href="https://madewithreactjs.com/p/filterlists/shield-link"><img alt="MadeWithReactJS.com" src="https://madewithreactjs.com/storage/repo-shields/2335-shield.svg"/></a>
 <br/>FilterLists is the independent, comprehensive directory of filter and host lists for advertisements, trackers, malware, and annoyances.</p>
 
-# Table of Contents
-
-- [Background](#background)
-- [Services](#services)
-- [Contributing](#contributing)
-  - [Adding or Updating Lists](#adding-or-updating-lists)
-  - [Adding or Updating Rules](#adding-or-updating-rules)
-  - [Building and Running Locally](#building-and-running-locally)
-- [Acknowledgements](#acknowledgements)
-- [Miscellany](#miscellany)
-  - [Disclaimer](#disclaimer)
-  - [Privacy](#privacy)
-
 # Background
 
 FilterLists helps to protect your privacy and security when using the internet. It provides a comprehensive directory of subscription lists to block advertisements, malware, trackers, and other general annoyances. First, install one of the software tools that supports these lists. Then you can subscribe to a set of these lists inside of that software. If you need help or have a comment/question, start a [Discussion](https://github.com/collinbarrett/FilterLists/discussions).
@@ -31,9 +18,8 @@ Typical adblockers run as an extension in popular web browsers. As we browse the
 
 | Service       | Description                                                                               | More                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | ------------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Website       | A React & TypeScript UI built with Ant Design.                                            | [![Website](https://img.shields.io/website-up-down-green-red/http/shields.io.svg?label=Website)](https://filterlists.com/) [![Website Azure DevOps builds](https://dev.azure.com/collinbarrett/FilterLists/_apis/build/status/Web?branchName=main)](https://dev.azure.com/collinbarrett/FilterLists/_build/latest?definitionId=18) [![Website Azure DevOps releases](https://vsrm.dev.azure.com/collinbarrett/_apis/public/Release/badge/b06a3d5c-459e-4789-9735-0f5969006fe8/4/5)](https://dev.azure.com/collinbarrett/FilterLists/_release?definitionId=4) [![Website Docker Image](https://img.shields.io/badge/docker%20image-web-blue?label=Docker%20Image)](https://github.com/users/collinbarrett/packages/container/package/filterlists-web) [![Website Security Headers](https://img.shields.io/security-headers?url=https%3A%2F%2Ffilterlists.com)](https://securityheaders.com/?q=https%3A%2F%2Ffilterlists.com)                                                                                                                                                                                                                                                                                                                                                                                                               |
-| Directory API | An ASP.NET Core API serving the core FilterList information.                              | [![Directory API Swagger UI](https://img.shields.io/website-up-down-green-red/http/shields.io.svg?label=API%20Docs)](https://filterlists.com/api/?urls.primaryName=Directory) [![Directory API OpenAPI Specification](https://img.shields.io/swagger/valid/3.0?specUrl=https%3A%2F%2Ffilterlists.com%2Fapi%2Fdirectory%2Fv1%2Fswagger.json)](https://filterlists.com/api/directory/v1/swagger.json) [![Directory API Azure DevOps builds](https://dev.azure.com/collinbarrett/FilterLists/_apis/build/status/Directory%20API?branchName=main)](https://dev.azure.com/collinbarrett/FilterLists/_build/latest?definitionId=27) [![Directory API Azure DevOps releases](https://vsrm.dev.azure.com/collinbarrett/_apis/public/Release/badge/b06a3d5c-459e-4789-9735-0f5969006fe8/3/4)](https://dev.azure.com/collinbarrett/FilterLists/_release?definitionId=3) [![Directory API Docker Image](https://img.shields.io/badge/docker%20image-directory--api-blue?label=Docker%20Image)](https://github.com/users/collinbarrett/packages/container/package/filterlists-directory-api) [![Directory API Security Headers](https://img.shields.io/security-headers?url=https%3A%2F%2Ffilterlists.com%2Fapi%2Fdirectory%2Fv1%2Fswagger.json)](https://securityheaders.com/?q=https%3A%2F%2Ffilterlists.com%2Fapi%2Fdirectory%2Fv1%2Fswagger.json) |
-| Reverse Proxy | An NGINX instance forwarding requests to the respective services above.                   | [![Reverse Proxy Azure DevOps builds](https://dev.azure.com/collinbarrett/FilterLists/_apis/build/status/Reverse%20Proxy?branchName=main)](https://dev.azure.com/collinbarrett/FilterLists/_build/latest?definitionId=21) [![Reverse Proxy Azure DevOps releases](https://vsrm.dev.azure.com/collinbarrett/_apis/public/Release/badge/b06a3d5c-459e-4789-9735-0f5969006fe8/5/6)](https://dev.azure.com/collinbarrett/FilterLists/_release?definitionId=5) [![Reverse Proxy Mozilla HTTP Observatory Grade](https://img.shields.io/mozilla-observatory/grade/filterlists.com?publish)](https://observatory.mozilla.org/analyze/filterlists.com) [![Reverse Proxy Chromium HSTS preload](https://img.shields.io/hsts/preload/filterlists.com)](https://hstspreload.org/?domain=filterlists.com)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Website       | A React & TypeScript UI built with Ant Design.                                            | [![Website](https://img.shields.io/website-up-down-green-red/http/shields.io.svg?label=Website)](https://filterlists.com/)                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Directory API | An ASP.NET Core API serving the core FilterList information.                              | [![Directory API Swagger UI](https://img.shields.io/website-up-down-green-red/http/shields.io.svg?label=API%20Docs)](https://api.filterlists.com) [![Directory API OpenAPI Specification](https://img.shields.io/swagger/valid/3.0?specUrl=https%3A%2F%2Fapi.filterlists.com%2Fswagger%2Fv1%2Fswagger.json)](https://api.filterlists.com/swagger/v1/swagger.json) [![Directory API Docker Image](https://img.shields.io/badge/docker%20image-directory--api-blue?label=Docker%20Image)](https://github.com/users/collinbarrett/packages/container/package/filterlists-directory-api)
 
 # Contributing
 
@@ -53,18 +39,75 @@ FilterLists does not maintain any of these lists. It serves only as a discovery 
 
 ## Building and Running Locally
 
-We have containerized FilterLists to make it as easy as possible for contributers to get the project up and running locally.
+FilterLists is build on the .NET Aspire stack. Install the [.NET Aspire prerequisites](https://learn.microsoft.com/en-us/dotnet/aspire/fundamentals/setup-tooling) before proceeding.
 
-1. Install Docker CE. [Docs](https://docs.docker.com/install/)
-2. Install the current version of Node.js. [Docs](https://nodejs.org/en/download/current/)
-3. Clone the FilterLists git repository to your computer. [Docs](https://help.github.com/en/articles/cloning-a-repository)
-4. Navigate to the root directory of your locally cloned FilterLists git repository in a command-line interface.
-5. Start the APIs:<br>
-   `docker-compose -f docker-compose/docker-compose.yml -f docker-compose/docker-compose.override.yml up -d`<br>
-   You can then view the API docs and execute API calls here: http://localhost:8080/api/
-6. Start the Web app:<br>
-   `npm i --cwd web && npm start --prefix web`<br>
-   You can then view the Web app calling your local instance of the Directory API here: http://localhost:3000
+### Directory API
+
+#### Prepare Database Volume
+
+So that the database does not need to be re-seeded on every startup, the SQL Server container is configured with a volume mount. Create a persistent password in order for this to be accessed by executing the command below in `services/FilterLists.AppHost` replacing `<password>` with a custom password:
+
+```bash
+dotnet user-secrets set Parameters:directorysqlserver-password <password>
+```
+
+Alternatively, remove the `.WithDataVolume()` configuration on the `directoryDb` resource in `services/FilterLists.AppHost/Program.cs` to re-seed the database on every startup.
+
+[MS Learn](https://learn.microsoft.com/en-us/dotnet/aspire/fundamentals/persist-data-volumes)
+
+#### Adding EF Core Migrations
+
+Modify the database schema or seed data by adding an EF Core migration. 
+
+1. Install the [EF Core tools](https://learn.microsoft.com/en-us/ef/core/cli/dotnet#installing-the-tools).
+2. Modify the `QueryDbContext` EF Core model or the seed data.
+3. Execute the command below in the `services/Directory` directory replacing `<MigrationName>` with a meaningful name.
+
+```bash
+dotnet ef migrations add <MigrationName> -p FilterLists.Directory.Infrastructure.Migrations -s FilterLists.Directory.Api
+```
+
+## Deploying to Production
+
+### Directory API
+
+#### Create and Prepare SQL Server Database
+
+Create an instance of SQL Server containing the users below.
+
+##### Migrations user for applying EF Core migrations
+
+```sql
+USE [master];
+GO
+
+CREATE LOGIN [Migrations] WITH PASSWORD = 'my_password';
+GO
+
+USE [directorydb];
+GO
+
+CREATE USER [Migrations] FOR LOGIN [Migrations];
+ALTER ROLE [db_ddladmin] ADD MEMBER [Migrations]; -- to apply migrations
+ALTER ROLE [db_datareader] ADD MEMBER [Migrations]; -- to read from __EFMigrationsHistory
+ALTER ROLE [db_datawriter] ADD MEMBER [Migrations]; -- to insert to __EFMigrationsHistory
+```
+
+##### ApiReadonly for API runtime reads
+
+```sql
+USE [master];
+GO
+
+CREATE LOGIN [ApiReadonly] WITH PASSWORD = 'my_password';
+GO
+
+USE [directorydb];
+GO
+
+CREATE USER [ApiReadonly] FOR LOGIN [ApiReadonly];
+ALTER ROLE [db_datareader] ADD MEMBER [ApiReadonly];
+```
 
 # Acknowledgements
 
@@ -84,7 +127,5 @@ FilterLists does not condone subscribing to any particular FilterList or blockin
 We respect your privacy. That is the whole point of this project. The only minor data we collect about visitors is what our infrastructure providers collect. These include:
 
 - [GitHub](https://help.github.com/articles/github-privacy-statement/)
-- [Azure DevOps](https://docs.microsoft.com/en-us/azure/devops/organizations/security/data-protection?view=azure-devops)
-- [Application Insights](https://docs.microsoft.com/en-us/azure/azure-monitor/app/data-retention-privacy)
-- [DigitalOcean](https://www.digitalocean.com/legal/privacy-policy/)
+- [Azure](https://azure.microsoft.com/en-us/explore/trusted-cloud/privacy/)
 - [Cloudflare](https://www.cloudflare.com/analytics/)

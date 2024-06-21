@@ -1,50 +1,48 @@
-﻿using FilterLists.Directory.Domain.Aggregates;
-using FilterLists.Directory.Infrastructure.Persistence.Queries.Entities;
+﻿using FilterLists.Directory.Infrastructure.Persistence.Queries.Entities;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 
 namespace FilterLists.Directory.Infrastructure.Persistence.Queries.Context;
 
-public class QueryDbContext : DbContext
+public sealed class QueryDbContext(DbContextOptions<QueryDbContext> options) : DbContext(options)
 {
-    static QueryDbContext()
-    {
-#pragma warning disable CS0618
-        NpgsqlConnection.GlobalTypeMapper.MapEnum<AggregateType>();
-#pragma warning restore CS0618
-    }
+    private const string ReadOnlyErrorMessage = "This context is read-only and cannot save changes.";
 
-    public QueryDbContext(DbContextOptions<QueryDbContext> options) : base(options) { }
-
-    public DbSet<Change> Changes => Set<Change>();
-    public DbSet<FilterList> FilterLists => Set<FilterList>();
-    public DbSet<Language> Languages => Set<Language>();
-    public DbSet<License> Licenses => Set<License>();
-    public DbSet<Maintainer> Maintainers => Set<Maintainer>();
-    public DbSet<Software> Software => Set<Software>();
-    public DbSet<Syntax> Syntaxes => Set<Syntax>();
-    public DbSet<Tag> Tags => Set<Tag>();
-
-    public override int SaveChanges(bool acceptAllChangesOnSuccess)
-    {
-        throw new InvalidOperationException("This context is read-only.");
-    }
-
-    public override Task<int> SaveChangesAsync(
-        bool acceptAllChangesOnSuccess,
-        CancellationToken cancellationToken = default)
-    {
-        throw new InvalidOperationException("This context is read-only.");
-    }
+    public IQueryable<FilterList> FilterLists => Set<FilterList>();
+    public IQueryable<Language> Languages => Set<Language>();
+    public IQueryable<License> Licenses => Set<License>();
+    public IQueryable<Maintainer> Maintainers => Set<Maintainer>();
+    public IQueryable<Software> Software => Set<Software>();
+    public IQueryable<Syntax> Syntaxes => Set<Syntax>();
+    public IQueryable<Tag> Tags => Set<Tag>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.HasSequence($"EntityFrameworkHiLoSequence-{nameof(FilterListViewUrl)}")
-            .StartsAt(3000)
-            .IncrementsBy(3);
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.UseCollation("Latin1_General_100_CI_AS_SC");
         modelBuilder.ApplyConfigurationsFromAssembly(
             GetType().Assembly,
             type => type.Namespace == typeof(FilterListTypeConfiguration).Namespace);
-        modelBuilder.HasPostgresEnum<AggregateType>();
+    }
+
+    public override int SaveChanges()
+    {
+        throw new InvalidOperationException(ReadOnlyErrorMessage);
+    }
+
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        throw new InvalidOperationException(ReadOnlyErrorMessage);
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        throw new InvalidOperationException(ReadOnlyErrorMessage);
+    }
+
+    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess,
+        CancellationToken cancellationToken = default)
+    {
+        throw new InvalidOperationException(ReadOnlyErrorMessage);
     }
 }
